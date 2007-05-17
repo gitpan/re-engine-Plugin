@@ -1,6 +1,6 @@
 use strict;
 
-use Test::More tests => 2;
+use Test::More tests => 3;
 
 use re::engine::Plugin (
     comp => sub {
@@ -15,4 +15,6 @@ use re::engine::Plugin (
 );
 
 pass "making match";
+"s" =~ /pattern/;
+"st" =~ /pattern/;
 "str" =~ /pattern/;
