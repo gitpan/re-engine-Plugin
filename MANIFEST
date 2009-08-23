@@ -1,7 +1,8 @@
-ChangeLog
+Changes
 Makefile.PL
-MANIFEST			This list of files
+MANIFEST
 MANIFEST.SKIP
+META.yml
 Plugin.h
 Plugin.pm
 Plugin.pod
@@ -32,4 +33,3 @@ t/usage/basic.t
 t/usage/import.t
 t/usage/import.pm
 typemap
-META.yml                                 Module meta-data (added by MakeMaker)
