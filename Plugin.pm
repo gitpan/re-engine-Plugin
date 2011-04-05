@@ -6,7 +6,7 @@ use strict;
 our ($VERSION, @ISA);
 
 BEGIN {
- $VERSION = '0.08';
+ $VERSION = '0.09';
  # All engines should subclass the core Regexp package
  @ISA = 'Regexp';
  require XSLoader;
@@ -20,7 +20,7 @@ sub import
     my ($pkg, %sub) = @_;
 
     # Valid callbacks
-    my @callback = qw(comp exec);
+    my @callback = qw<comp exec>;
 
     for (@callback) {
         next unless exists $sub{$_};
@@ -55,7 +55,7 @@ sub callbacks
 {
     my ($re, %callback) = @_;
 
-    my %map = map { $_ => "_$_" } qw/exec/;
+    my %map = map { $_ => "_$_" } qw<exec>;
 
     for my $key (keys %callback) {
         my $name = $map{$key};

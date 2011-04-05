@@ -1,7 +1,25 @@
 use 5.010;
+
+use strict;
+use warnings;
 use ExtUtils::MakeMaker;
 
+my @DEFINES;
+
+# Fork emulation got "fixed" in 5.10.1
+if ($^O eq 'MSWin32' && $^V lt v5.10.1) {
+ push @DEFINES, '-DREP_FORKSAFE=0';
+}
+
+@DEFINES = (DEFINE => join ' ', @DEFINES) if @DEFINES;
+
 my $dist = 're-engine-Plugin';
+
+(my $name = $dist) =~ s{-}{::}g;
+
+my %PREREQ_PM = (
+ 'XSLoader' => 0,
+);
 
 my %META = (
  configure_requires => {
@@ -10,7 +28,9 @@ my %META = (
  build_requires => {
   'ExtUtils::MakeMaker' => 0,
   'Test::More'          => 0,
+  %PREREQ_PM,
  },
+ dynamic_config => 0,
  resources => {
   bugtracker => "http://rt.cpan.org/NoAuth/ReportBug.html?Queue=$dist",
   homepage   => "http://search.cpan.org/dist/$dist/",
@@ -20,25 +40,24 @@ my %META = (
 );
 
 WriteMakefile(
-    NAME             => 're::engine::Plugin',
-    AUTHOR           => 'Vincent Pit <perl@profvince.com>',
-    LICENSE          => 'perl',
-    ABSTRACT_FROM    => 'Plugin.pod',
-    VERSION_FROM     => 'Plugin.pm',
-    PL_FILES         => {},
-    PREREQ_PM        => {
-        'XSLoader' => 0,
-    },
-    MIN_PERL_VERSION => 5.010,
-    META_MERGE       => \%META,
-    dist             => {
-        PREOP    => 'pod2text Plugin.pod > $(DISTVNAME)/README',
-        COMPRESS => 'gzip -9f', SUFFIX => 'gz'
-    },
-    clean            => {
-        FILES => "$dist-* *.gcov *.gcda *.gcno cover_db Debian_CPANTS.txt"
-    },
-    test             => {
-        TESTS => 't/*.t t/*/*.t t/*/*/*.t',
-    },
+ NAME             => $name,
+ AUTHOR           => 'Vincent Pit <perl@profvince.com>',
+ LICENSE          => 'perl',
+ ABSTRACT_FROM    => 'Plugin.pod',
+ VERSION_FROM     => 'Plugin.pm',
+ PL_FILES         => {},
+ @DEFINES,
+ PREREQ_PM        => \%PREREQ_PM,
+ MIN_PERL_VERSION => 5.010,
+ META_MERGE       => \%META,
+ dist             => {
+  PREOP    => 'pod2text Plugin.pod > $(DISTVNAME)/README',
+  COMPRESS => 'gzip -9f', SUFFIX => 'gz'
+ },
+ clean            => {
+  FILES => "$dist-* *.gcov *.gcda *.gcno cover_db Debian_CPANTS.txt"
+ },
+ test             => {
+  TESTS => 't/*.t t/*/*.t t/*/*/*.t',
+ },
 );

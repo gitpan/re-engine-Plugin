@@ -1,3 +1,12 @@
+0.09    2011-04-05 16:05 UTC - Vincent Pit
+        + Add : The constants REP_THREADSAFE and REP_FORKSAFE tell you whenever
+                the pragma is thread-safe and fork-safe.
+        + Fix : Compatibility with perl 5.13.6 and upwards.
+        + Fix : The pragma should be much less eager to leak into other scopes.
+        + Fix : Memory leaks of code references stored into the regexp object.
+        + Fix : Work around Kwalitee test misfailures.
+        + Tst : Thread safety is now tested on perl 5.13.4 and greater.
+
 0.08    2009-08-29 16:55 UTC - Vincent Pit
         + Add : The new ->callbacks method to the regexp object let you specify
                 the 'exec' callback on an individual basis.

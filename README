@@ -2,7 +2,7 @@ NAME
     re::engine::Plugin - API to write custom regex engines
 
 VERSION
-    Version 0.08
+    Version 0.09
 
 DESCRIPTION
     As of perl 5.9.5 it's possible to lexically replace perl's built-in
@@ -244,7 +244,17 @@ METHODS
     methods FETCH, STORE, DELETE, CLEAR, EXISTS, FIRSTKEY, NEXTKEY and
     SCALAR.
 
-Tainting
+CONSTANTS
+  "REP_THREADSAFE"
+    True iff the module could have been built with thread-safety features
+    enabled.
+
+  "REP_FORKSAFE"
+    True iff this module could have been built with fork-safety features
+    enabled. This will always be true except on Windows where it's false for
+    perl 5.10.0 and below.
+
+TAINTING
     The only way to untaint an existing variable in Perl is to use it as a
     hash key or referencing subpatterns from a regular expression match (see
     perlsec), the latter only works in perl's regex engine because it
@@ -301,7 +311,7 @@ Tainting
 SEE ALSO
     perlreapi, Taint::Util
 
-TODO / CAVEATS
+TODO & CAVEATS
     *here be dragons*
 
     *   Engines implemented with this module don't support "s///" and "split
@@ -371,6 +381,14 @@ TODO / CAVEATS
         checkstr callbacks are called. Write wrappers around them and add
         tests.
 
+DEPENDENCIES
+    perl 5.10.
+
+    A C compiler. This module may happen to build with a C++ compiler as
+    well, but don't rely on it, as no guarantee is made in this regard.
+
+    XSLoader (standard since perl 5.006).
+
 BUGS
     Please report any bugs that aren't already listed at
     <http://rt.cpan.org/Dist/Display.html?Queue=re-engine-Plugin> to
@@ -382,9 +400,9 @@ AUTHORS
     Vincent Pit "<perl at profvince.com>"
 
 LICENSE
-    Copyright 2007-2008 Ævar Arnfjörð Bjarmason.
+    Copyright 2007,2008 Ævar Arnfjörð Bjarmason.
 
-    Copyright 2009 Vincent Pit.
+    Copyright 2009,2010,2011 Vincent Pit.
 
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.

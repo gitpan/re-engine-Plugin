@@ -9,6 +9,7 @@ Plugin.pod
 Plugin.xs
 README
 ptable.h
+reap.h
 t/00-compile.t
 t/10-usage/basic.pm
 t/10-usage/basic.t
@@ -36,6 +37,7 @@ t/50-num_buff/LENGTH.t
 t/50-num_buff/STORE.t
 t/60-taint/rx.t
 t/60-taint/util.t
+t/70-threads/threads.t
 t/90-author/kwalitee.t
 t/90-author/portability-files.t
 t/90-author/pod.t

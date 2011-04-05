@@ -15,7 +15,7 @@ use Test::More skip_all => "Needs lameness in user code";
 #        # We have :import, generate import and unimport methods in the
 #        # calling package
 #        my %pkg;
-#        for (qw(comp exec)) {
+#        for (qw<comp exec>) {
 #            no strict 'refs';
 #            $pkg{$_} = *{"$caller\::$_"}{CODE} if *{"$caller\::$_"}{CODE};
 #        }

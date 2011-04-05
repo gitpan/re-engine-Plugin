@@ -4,10 +4,10 @@
 
 /* re__engine__Plugin self; SELF_FROM_PPRIVATE(self,rx->pprivate) */
 #define SELF_FROM_PPRIVATE(self, pprivate)                   \
-	if (sv_isobject(pprivate)) {                             \
+    if (sv_isobject(pprivate)) {                             \
         SV * ref = SvRV((SV*)pprivate);                      \
-	    IV tmp = SvIV((SV*)ref);                             \
-	    self = INT2PTR(re__engine__Plugin,tmp);              \
+        IV tmp = SvIV((SV*)ref);                             \
+        self = INT2PTR(re__engine__Plugin,tmp);              \
     } else {                                                 \
         Perl_croak(aTHX_ "Not an object");                   \
     }
@@ -25,6 +25,7 @@ EXTERN_C char *   Plugin_intuit(pTHX_ REGEXP * const, SV *, char *,
                                 char *, U32, re_scream_pos_data *);
 EXTERN_C SV *     Plugin_checkstr(pTHX_ REGEXP * const);
 EXTERN_C void     Plugin_free(pTHX_ REGEXP * const);
+EXTERN_C void *   Plugin_dupe(pTHX_ REGEXP * const, CLONE_PARAMS *);
 EXTERN_C void     Plugin_numbered_buff_FETCH(pTHX_ REGEXP * const,
                                              const I32, SV * const);
 EXTERN_C void     Plugin_numbered_buff_STORE(pTHX_ REGEXP * const,

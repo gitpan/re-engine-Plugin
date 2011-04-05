@@ -27,7 +27,7 @@ use re::engine::Plugin (
         ok(tainted($str) => 'matched string tainted');
 
         my $one = $str;
-        my $two = $str; $two ~~ /(.*)/; $two = $1;
+        my $two = $str; $two =~ /(.*)/; $two = $1;
 
         ok(tainted($one));
         ok(!tainted($two));

@@ -4,7 +4,7 @@ re::engine::Plugin - API to write custom regex engines
 
 =head1 VERSION
 
-Version 0.08
+Version 0.09
 
 =head1 DESCRIPTION
 
@@ -265,7 +265,20 @@ done it'll allow the binding of C<%+> and C<%-> and support the
 L<Tie::Hash> methods FETCH, STORE, DELETE, CLEAR, EXISTS, FIRSTKEY,
 NEXTKEY and SCALAR.
 
-=head1 Tainting
+=head1 CONSTANTS
+
+=head2 C<REP_THREADSAFE>
+
+True iff the module could have been built with thread-safety features
+enabled.
+
+=head2 C<REP_FORKSAFE>
+
+True iff this module could have been built with fork-safety features
+enabled. This will always be true except on Windows where it's false
+for perl 5.10.0 and below.
+
+=head1 TAINTING
 
 The only way to untaint an existing variable in Perl is to use it as a
 hash key or referencing subpatterns from a regular expression match
@@ -326,7 +339,7 @@ this module is responsible for how and if it untaints its variables.
 
 L<perlreapi>, L<Taint::Util>
 
-=head1 TODO / CAVEATS
+=head1 TODO & CAVEATS
 
 I<here be dragons>
 
@@ -419,6 +432,15 @@ tests.
 
 =back
 
+=head1 DEPENDENCIES
+
+L<perl> 5.10.
+
+A C compiler.
+This module may happen to build with a C++ compiler as well, but don't rely on it, as no guarantee is made in this regard.
+
+L<XSLoader> (standard since perl 5.006).
+
 =head1 BUGS
 
 Please report any bugs that aren't already listed at
@@ -433,9 +455,9 @@ Vincent Pit C<< <perl at profvince.com> >>
 
 =head1 LICENSE
 
-Copyright 2007-2008 E<AElig>var ArnfjE<ouml>rE<eth> Bjarmason.
+Copyright 2007,2008 E<AElig>var ArnfjE<ouml>rE<eth> Bjarmason.
 
-Copyright 2009 Vincent Pit.
+Copyright 2009,2010,2011 Vincent Pit.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
