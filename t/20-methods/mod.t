@@ -5,7 +5,6 @@ Test the C<mod> or C<modifiers> method
 =cut
 
 use strict;
-use feature ':5.10';
 use Test::More tests => 25;
 
 my @tests = (
@@ -69,7 +68,7 @@ use re::engine::Plugin (
 "" =~ /x/xs;
 "" =~ /x/cgimosxp;
 
-my $_ = "";
+local $_ = "";
 
 $_ =~ s/1/2/e;
 $_ =~ s/1/2/egimosxp;

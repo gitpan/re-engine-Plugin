@@ -6,8 +6,6 @@
 #include "perl.h"
 #include "XSUB.h"
 
-#include "Plugin.h"
-
 #define __PACKAGE__     "re::engine::Plugin"
 #define __PACKAGE_LEN__ (sizeof(__PACKAGE__)-1)
 
@@ -138,13 +136,34 @@ STATIC void rep_ptable_clone(pTHX_ ptable_ent *ent, void *ud_) {
  ptable_store(ud->tbl, ent->key, h2);
 }
 
-#include "reap.h"
-
 STATIC void rep_thread_cleanup(pTHX_ void *ud) {
  dMY_CXT;
 
  ptable_free(MY_CXT.tbl);
 }
+
+STATIC int rep_endav_free(pTHX_ SV *sv, MAGIC *mg) {
+ SAVEDESTRUCTOR_X(rep_thread_cleanup, NULL);
+
+ return 0;
+}
+
+STATIC MGVTBL rep_endav_vtbl = {
+ 0,
+ 0,
+ 0,
+ 0,
+ rep_endav_free
+#if MGf_COPY
+ , 0
+#endif
+#if MGf_DUP
+ , 0
+#endif
+#if MGf_LOCAL
+ , 0
+#endif
+};
 
 #endif /* REP_THREADSAFE */
 
@@ -273,11 +292,123 @@ STATIC const rep_hint_t *rep_hint(pTHX) {
  return rep_detag(hint);
 }
 
-REGEXP *
-#if PERL_VERSION <= 10
-Plugin_comp(pTHX_ const SV * const pattern, const U32 flags)
+/* --- Custom regexp engine ------------------------------------------------ */
+
+#define GET_SELF_FROM_PPRIVATE(pprivate)        \
+    re__engine__Plugin self;                    \
+    SELF_FROM_PPRIVATE(self,pprivate);
+
+/* re__engine__Plugin self; SELF_FROM_PPRIVATE(self,rx->pprivate) */
+#define SELF_FROM_PPRIVATE(self, pprivate)                   \
+    if (sv_isobject(pprivate)) {                             \
+        SV * ref = SvRV((SV*)pprivate);                      \
+        IV tmp = SvIV((SV*)ref);                             \
+        self = INT2PTR(re__engine__Plugin,tmp);              \
+    } else {                                                 \
+        Perl_croak(aTHX_ "Not an object");                   \
+    }
+
+#if REP_HAS_PERL(5, 19, 4)
+# define REP_ENG_EXEC_MINEND_TYPE SSize_t
 #else
+# define REP_ENG_EXEC_MINEND_TYPE I32
+#endif
+
+START_EXTERN_C
+EXTERN_C const regexp_engine engine_plugin;
+#if REP_HAS_PERL(5, 11, 0)
+EXTERN_C REGEXP * Plugin_comp(pTHX_ SV * const, U32);
+#else
+EXTERN_C REGEXP * Plugin_comp(pTHX_ const SV * const, const U32);
+#endif
+EXTERN_C I32      Plugin_exec(pTHX_ REGEXP * const, char *, char *,
+                              char *, REP_ENG_EXEC_MINEND_TYPE, SV *, void *, U32);
+#if REP_HAS_PERL(5, 19, 1)
+EXTERN_C char *   Plugin_intuit(pTHX_ REGEXP * const, SV *, const char * const,
+                                char *, char *, U32, re_scream_pos_data *);
+#else
+EXTERN_C char *   Plugin_intuit(pTHX_ REGEXP * const, SV *, char *,
+                                char *, U32, re_scream_pos_data *);
+#endif
+EXTERN_C SV *     Plugin_checkstr(pTHX_ REGEXP * const);
+EXTERN_C void     Plugin_free(pTHX_ REGEXP * const);
+EXTERN_C void *   Plugin_dupe(pTHX_ REGEXP * const, CLONE_PARAMS *);
+EXTERN_C void     Plugin_numbered_buff_FETCH(pTHX_ REGEXP * const,
+                                             const I32, SV * const);
+EXTERN_C void     Plugin_numbered_buff_STORE(pTHX_ REGEXP * const,
+                                             const I32, SV const * const);
+EXTERN_C I32      Plugin_numbered_buff_LENGTH(pTHX_ REGEXP * const,
+                                              const SV * const, const I32);
+EXTERN_C SV *     Plugin_named_buff (pTHX_ REGEXP * const, SV * const,
+                                     SV * const, const U32);
+EXTERN_C SV *     Plugin_named_buff_iter (pTHX_ REGEXP * const, const SV * const,
+                                          const U32);
+EXTERN_C SV *     Plugin_package(pTHX_ REGEXP * const);
+#ifdef USE_ITHREADS
+EXTERN_C void *   Plugin_dupe(pTHX_ REGEXP * const, CLONE_PARAMS *);
+#endif
+
+EXTERN_C const regexp_engine engine_plugin;
+END_EXTERN_C
+
+#define RE_ENGINE_PLUGIN (&engine_plugin)
+const regexp_engine engine_plugin = {
+    Plugin_comp,
+    Plugin_exec,
+    Plugin_intuit,
+    Plugin_checkstr,
+    Plugin_free,
+    Plugin_numbered_buff_FETCH,
+    Plugin_numbered_buff_STORE,
+    Plugin_numbered_buff_LENGTH,
+    Plugin_named_buff,
+    Plugin_named_buff_iter,
+    Plugin_package
+#if defined(USE_ITHREADS)
+    , Plugin_dupe
+#endif
+#if REP_HAS_PERL(5, 17, 0)
+    , 0
+#endif
+};
+
+typedef struct replug {
+    /* Pointer back to the containing regexp struct so that accessors
+     * can modify nparens, gofs etc. */
+    struct regexp * rx;
+
+    /* A copy of the pattern given to comp, for ->pattern */
+    SV * pattern;
+
+    /* A copy of the string being matched against, for ->str */
+    SV * str;
+
+    /* The ->stash */
+    SV * stash;
+
+    /* Callbacks */
+    SV * cb_exec;
+    SV * cb_free;
+
+    /* ->num_captures */
+    SV * cb_num_capture_buff_FETCH;
+    SV * cb_num_capture_buff_STORE;
+    SV * cb_num_capture_buff_LENGTH;
+} *re__engine__Plugin;
+
+#if REP_HAS_PERL(5, 11, 0)
+# define rxREGEXP(RX)  (SvANY(RX))
+# define newREGEXP(RX) ((RX) = ((REGEXP*) newSV_type(SVt_REGEXP)))
+#else
+# define rxREGEXP(RX)  (RX)
+# define newREGEXP(RX) (Newxz((RX), 1, struct regexp))
+#endif
+
+REGEXP *
+#if REP_HAS_PERL(5, 11, 0)
 Plugin_comp(pTHX_ SV * const pattern, U32 flags)
+#else
+Plugin_comp(pTHX_ const SV * const pattern, const U32 flags)
 #endif
 {
     dSP;
@@ -313,7 +444,7 @@ Plugin_comp(pTHX_ SV * const pattern, U32 flags)
     rx->extflags = flags;          /* Flags for perl to use */
     rx->engine = RE_ENGINE_PLUGIN; /* Compile to use this engine */
 
-#if PERL_VERSION <= 10
+#if !REP_HAS_PERL(5, 11, 0)
     rx->refcnt = 1;                /* Refcount so we won't be destroyed */
 
     /* Precompiled pattern for pp_regcomp to use */
@@ -351,9 +482,9 @@ Plugin_comp(pTHX_ SV * const pattern, U32 flags)
      * already set up all the stuff we're going to to need for
      * subsequent exec and other calls */
     if (h->comp) {
-        ENTER;    
+        ENTER;
         SAVETMPS;
-   
+
         PUSHMARK(SP);
         XPUSHs(obj);
         PUTBACK;
@@ -375,7 +506,8 @@ Plugin_comp(pTHX_ SV * const pattern, U32 flags)
 
 I32
 Plugin_exec(pTHX_ REGEXP * const RX, char *stringarg, char *strend,
-            char *strbeg, I32 minend, SV *sv, void *data, U32 flags)
+            char *strbeg, REP_ENG_EXEC_MINEND_TYPE minend,
+            SV *sv, void *data, U32 flags)
 {
     dSP;
     I32 matched;
@@ -392,14 +524,14 @@ Plugin_exec(pTHX_ REGEXP * const RX, char *stringarg, char *strend,
 
         ENTER;
         SAVETMPS;
-   
+
         PUSHMARK(SP);
         XPUSHs(rx->pprivate);
         XPUSHs(sv);
         PUTBACK;
 
         call_sv(self->cb_exec, G_SCALAR);
- 
+
         SPAGAIN;
 
         ret = POPs;
@@ -419,11 +551,19 @@ Plugin_exec(pTHX_ REGEXP * const RX, char *stringarg, char *strend,
 }
 
 char *
+#if REP_HAS_PERL(5, 19, 1)
+Plugin_intuit(pTHX_ REGEXP * const RX, SV *sv, const char * const strbeg,
+              char *strpos, char *strend, U32 flags, re_scream_pos_data *data)
+#else
 Plugin_intuit(pTHX_ REGEXP * const RX, SV *sv, char *strpos,
-                     char *strend, U32 flags, re_scream_pos_data *data)
+              char *strend, U32 flags, re_scream_pos_data *data)
+#endif
 {
     PERL_UNUSED_ARG(RX);
     PERL_UNUSED_ARG(sv);
+#if REP_HAS_PERL(5, 19, 1)
+    PERL_UNUSED_ARG(strbeg);
+#endif
     PERL_UNUSED_ARG(strpos);
     PERL_UNUSED_ARG(strend);
     PERL_UNUSED_ARG(flags);
@@ -471,7 +611,7 @@ Plugin_free(pTHX_ REGEXP * const RX)
     if (callback) {
         ENTER;
         SAVETMPS;
-   
+
         PUSHMARK(SP);
         XPUSHs(rx->pprivate);
         PUTBACK;
@@ -510,14 +650,14 @@ Plugin_numbered_buff_FETCH(pTHX_ REGEXP * const RX, const I32 paren,
     if (callback) {
         ENTER;
         SAVETMPS;
-   
+
         PUSHMARK(SP);
         XPUSHs(rx->pprivate);
         XPUSHs(sv_2mortal(newSViv(paren)));
         PUTBACK;
 
         items = call_sv(callback, G_SCALAR);
-        
+
         if (items == 1) {
             SV *ret;
 
@@ -550,7 +690,7 @@ Plugin_numbered_buff_STORE(pTHX_ REGEXP * const RX, const I32 paren,
     if (callback) {
         ENTER;
         SAVETMPS;
-   
+
         PUSHMARK(SP);
         XPUSHs(rx->pprivate);
         XPUSHs(sv_2mortal(newSViv(paren)));
@@ -581,7 +721,7 @@ Plugin_numbered_buff_LENGTH(pTHX_ REGEXP * const RX, const SV * const sv,
 
         ENTER;
         SAVETMPS;
-   
+
         PUSHMARK(SP);
         XPUSHs(rx->pprivate);
         XPUSHs(sv_2mortal(newSViv(paren)));
@@ -693,6 +833,7 @@ void
 CLONE(...)
 PREINIT:
     ptable *t;
+    GV     *gv;
 PPCODE:
     {
         rep_ptable_clone_ud ud;
@@ -708,7 +849,23 @@ PPCODE:
         MY_CXT.tbl   = t;
         MY_CXT.owner = aTHX;
     }
-    reap(3, rep_thread_cleanup, NULL);
+    gv = gv_fetchpv(__PACKAGE__ "::_THREAD_CLEANUP", 0, SVt_PVCV);
+    if (gv) {
+        CV *cv = GvCV(gv);
+        if (!PL_endav)
+            PL_endav = newAV();
+        SvREFCNT_inc(cv);
+        if (!av_store(PL_endav, av_len(PL_endav) + 1, (SV *) cv))
+            SvREFCNT_dec(cv);
+        sv_magicext((SV *) PL_endav, NULL, PERL_MAGIC_ext, &rep_endav_vtbl, NULL, 0);
+    }
+    XSRETURN(0);
+
+void
+_THREAD_CLEANUP(...)
+PROTOTYPE: DISABLE
+PPCODE:
+    rep_thread_cleanup(aTHX_ NULL);
     XSRETURN(0);
 
 #endif /* REP_THREADSAFE */

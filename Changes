@@ -1,3 +1,16 @@
+0.10    2014-10-01 23:55 UTC - Vincent Pit
+        + Fix : [RT #92118] : Testing failed with Perl 5.17.5+
+                The tests have been taught about perls newer than 5.18.0.
+                Thanks Tokuhiro Matsuno for reporting.
+        + Fix : The module should no longer cause segfaults when an END block
+                executed at the end of a pseudo-fork compiles some code with
+                eval STRING.
+        + Fix : Miscellaneous compiler warnings with newer perls have been
+                silenced.
+        + Tst : Author tests are no longer bundled with this distribution.
+                They are only made available to authors in the git repository.
+        + Upd : Package metadata overhaul.
+
 0.09    2011-04-05 16:05 UTC - Vincent Pit
         + Add : The constants REP_THREADSAFE and REP_FORKSAFE tell you whenever
                 the pragma is thread-safe and fork-safe.

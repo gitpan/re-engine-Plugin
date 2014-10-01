@@ -6,7 +6,7 @@ use strict;
 our ($VERSION, @ISA);
 
 BEGIN {
- $VERSION = '0.09';
+ $VERSION = '0.10';
  # All engines should subclass the core Regexp package
  @ISA = 'Regexp';
  require XSLoader;

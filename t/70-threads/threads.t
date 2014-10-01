@@ -18,7 +18,7 @@ BEGIN {
  skipall 'This perl wasn\'t built to support threads'
                                                     unless $Config{useithreads};
  skipall 'perl 5.13.4 required to test thread safety'
-                                                unless $force or $] >= 5.013004;
+                                             unless $force or "$]" >= 5.013_004;
  skipall "threads $t_v required to test thread safety"
                                               unless eval "use threads $t_v; 1";
  skipall "threads::shared $ts_v required to test thread safety"

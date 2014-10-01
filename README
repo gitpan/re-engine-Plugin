@@ -2,7 +2,7 @@ NAME
     re::engine::Plugin - API to write custom regex engines
 
 VERSION
-    Version 0.09
+    Version 0.10
 
 DESCRIPTION
     As of perl 5.9.5 it's possible to lexically replace perl's built-in
@@ -387,7 +387,7 @@ DEPENDENCIES
     A C compiler. This module may happen to build with a C++ compiler as
     well, but don't rely on it, as no guarantee is made in this regard.
 
-    XSLoader (standard since perl 5.006).
+    XSLoader (standard since perl 5.6.0).
 
 BUGS
     Please report any bugs that aren't already listed at
@@ -395,14 +395,14 @@ BUGS
     <http://rt.cpan.org/Public/Bug/Report.html?Queue=re-engine-Plugin>
 
 AUTHORS
-    Ævar Arnfjörð Bjarmason "<avar at cpan.org>"
+    Ã†var ArnfjÃ¶rÃ° Bjarmason "<avar at cpan.org>"
 
     Vincent Pit "<perl at profvince.com>"
 
 LICENSE
-    Copyright 2007,2008 Ævar Arnfjörð Bjarmason.
+    Copyright 2007,2008 Ã†var ArnfjÃ¶rÃ° Bjarmason.
 
-    Copyright 2009,2010,2011 Vincent Pit.
+    Copyright 2009,2010,2011,2013,2014 Vincent Pit.
 
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.

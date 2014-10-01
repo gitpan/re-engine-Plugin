@@ -1,5 +1,6 @@
 use strict;
-use Test::More $] < 5.011 ? (tests => 7) : (skip_all => 'Not working in blead');
+use Test::More "$]" < 5.011 ? (tests => 7)
+                            : (skip_all => 'Not working in blead');
 
 use re::engine::Plugin (
     exec => sub {
